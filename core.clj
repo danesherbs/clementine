@@ -15,17 +15,19 @@
         client/get :body
         html/html-snippet)
     (catch Exception e
-      (println "Couldn't fetch" url (.getMessage e))
+      ; (println "Couldn't fetch" url (.getMessage e))
       (list))))  ; return empty dom
 
-(defn resolve
+(defn resolve-urls
   "Resolves base url and a relative link"
   [base rel]
-  (try
-    (str (urly/resolve
-          (urly/url-like base)
-          (urly/url-like rel)))
-    (catch Exception e)))
+  (if (urly/relative? rel)
+    (str (.mutatePath (urly/url-like base) rel))
+    (try
+      (str (urly/resolve
+            (urly/url-like base)
+            (urly/url-like rel)))
+      (catch Exception e))))
       ; (println "Couldn't resolve" base "and" rel (.getMessage e)))))
 
 (defn fetch-urls
@@ -36,7 +38,8 @@
       (html/select link-selector)
       (as-> nodes (map :attrs nodes))
       (as-> attrs (map :href attrs))
-      (as-> hrefs (map (fn [href] (resolve url href)) hrefs))
+      (as-> hrefs (remove nil? hrefs))
+      (as-> hrefs (map (fn [href] (resolve-urls url href)) hrefs))
       (as-> hrefs (remove nil? hrefs))))
 
 ; URLs currently being visited
