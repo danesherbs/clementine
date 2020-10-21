@@ -10,11 +10,24 @@
 (defn fetch-dom
   "Retrieves DOM at given url"
   [url]
-  (-> url
-      client/get :body
-      html/html-snippet))
+  (try
+    (-> url
+        client/get :body
+        html/html-snippet)
+    (catch Exception e
+      (println "Couldn't fetch" url (.getMessage e))
+      (list))))  ; return empty dom
 
-; (fetch-urls "https://news.ycombinator.com" [[:a.morelink]])
+(defn resolve
+  "Resolves base url and a relative link"
+  [base rel]
+  (try
+    (str (urly/resolve
+          (urly/url-like base)
+          (urly/url-like rel)))
+    (catch Exception e)))
+      ; (println "Couldn't resolve" base "and" rel (.getMessage e)))))
+
 (defn fetch-urls
   "Fetches urls on page"
   [url link-selector]
@@ -22,11 +35,9 @@
       fetch-dom
       (html/select link-selector)
       (as-> nodes (map :attrs nodes))
-      (as-> nodes (map :href nodes))
-      (as-> nodes (map (fn [href]
-                         (str (urly/resolve
-                               (urly/url-like url)
-                               (urly/url-like href)))) nodes))))
+      (as-> attrs (map :href attrs))
+      (as-> hrefs (map (fn [href] (resolve url href)) hrefs))
+      (as-> hrefs (remove nil? hrefs))))
 
 ; URLs currently being visited
 (def visiting (ref (set nil)))
@@ -35,6 +46,7 @@
 (def visited (ref (set nil)))
 
 ; (crawl "https://news.ycombinator.com" println [[:a.morelink]] 10)
+; (crawl "https://google.com" println [[:a]] 2)
 (defn crawl
   "Passes all reachable urls from url to handler fn"
   [url handler link-selector max-depth]
