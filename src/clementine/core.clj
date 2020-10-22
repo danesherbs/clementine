@@ -7,8 +7,6 @@
 
 
 ; Default config for http requests
-
-
 (def http-opts {:socket-timeout 4000
                 :conn-timeout 4000
                 :insecure? false
