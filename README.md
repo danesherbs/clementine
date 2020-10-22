@@ -4,6 +4,8 @@ A lightweight concurrent web crawler written in Clojure!
 
 ### Hacker News headlines
 ```clojure
+(require '[net.cgrand.enlive-html :as html])
+
 (def hacker-news-url "https://news.ycombinator.com")
 
 (defn headlines
