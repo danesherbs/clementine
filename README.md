@@ -20,6 +20,6 @@ A lightweight concurrent web crawler written in Clojure!
 ; Retrieve Hacker News headlines on first few pages!
 (crawl {:url hacker-news-url
         :handler headlines
-        :links [[:a.morelink]]
+        :link-selector [[:a.morelink]]
         :max-depth 3})
 ```
