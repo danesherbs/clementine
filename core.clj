@@ -5,61 +5,62 @@
             [net.cgrand.enlive-html :as html]
             [clj-http.client :as client]))
 
-(def http-opts {:socket-timeout 10000
-                :conn-timeout 10000
+
+; Default config for http requests
+
+
+(def http-opts {:socket-timeout 4000
+                :conn-timeout 4000
                 :insecure? false
                 :cookie-policy :standard
                 :throw-entire-message? false})
 
-; (fetch-dom "https://news.ycombinator.com")
-; (fetch-dom "https://github.com/HackerNews/API")
+; -> (fetch-dom "https://news.ycombinator.com")
+; -> ({:tag :a {:href "a.com"}} ...)
 (defn fetch-dom
   "Retrieves DOM at given url"
   [url]
-  (html/html-snippet
-   (:body (client/get url http-opts))))
+  (try (html/html-snippet (:body (client/get url http-opts)))
+       (catch Exception e (println "Couldn't fetch" url (.getMessage e)) [])))
 
-; (resolve-path "https://news.ycombinator.com" "news?p=3")
-; (resolve-path "https://news.ycombinator.com/news?p=2" "news?p=3")
-; (resolve-path "https://news.ycombinator.com/news?p=2" "https://worksinprogress.co/#issue-Issue 2")
+; -> (resolve-path "https://news.ycombinator.com/news?p=2" "news?p=3")
+; -> "https://news.ycombinator.com/news?p=3"
 (defn resolve-path [url other]
+  "Tries to resolve url and child url"
   (try (java.net.URL. (java.net.URL. url) other)
-       (catch java.net.MalformedURLException e (println "Couldn't join" url "and" other))))
+       (catch java.net.MalformedURLException e (println "Couldn't resolve" url "and" other))))
 
-; (.uncaughtException (java.net.URL. "javascript.void(0)"))
+; -> (is-http (java.net.URL. "mailto:/address@site.com"))
+; -> false
 (defn is-http
+  "Returns true iff url is valid and uses http"
   [url]
   (try (.startsWith (.getProtocol url) "http")
        (catch Exception e (println "Couldn't get protocol of" url) false)))
 
-(is-http (java.net.URL. "tel:/hello"))
-
+; -> (fetch-urls "https://news.ycombinator.com/news?p=2" [[:a.storylink]])
+; -> ("https://a.com" "https://b.com" ...)
 (defn fetch-urls
   "Fetches urls on page"
   [url link-selector]
   (-> url
-      (as-> url (try (fetch-dom url) (catch Exception e (println "Couldn't fetch" url (.getMessage e)) [])))
+      fetch-dom
       (html/select link-selector)
       (as-> nodes (map :attrs nodes))
       (as-> attrs (map :href attrs))
       (as-> hrefs (remove nil? hrefs))
       (as-> hrefs (map (fn [href] (resolve-path url href)) hrefs))
+      (as-> hrefs (remove nil? hrefs))
       (as-> hrefs (filter is-http hrefs))
       (as-> hrefs (map str hrefs))))
 
-; URLs currently being visited
-(def visiting (ref (set nil)))
-
-; URLs visited
-(def visited (ref (set nil)))
-
-; (crawl "https://news.ycombinator.com" println [[:a.morelink]] 10)
-; (crawl "https://news.ycombinator.com" println [[:a]] 1)
-; (crawl "https://google.com" println [[:a]] 2)
-; (crawl "https://gocardless.com/en-au/" println [[:a]] 2)
-(defn crawl
+; -> (go-crawl "https://news.ycombinator.com" println #{[:a.storylink] [:a.morelink]} 3)
+; -> "https://a.com"
+;    "https://b.com"
+;          ...
+(defn go-crawl
   "Passes all reachable urls from url to handler fn"
-  [url handler link-selector max-depth]
+  [url handler link-selector max-depth visiting visited]
   (if (>= max-depth 0)
     ; Crawl if not visted
     (let [crawl-url (ref false)]
@@ -85,7 +86,21 @@
                (alter visiting disj url)))
             ; Crawl next url
             (when @crawl-next-url
-              (go (crawl next-url handler link-selector (dec max-depth))))))))))
+              (go (go-crawl next-url handler link-selector (dec max-depth) visiting visited)))))))))
 
-; (crawl "https://news.ycombinator.com" (fn [url] (spit "output.txt" (str url "\n") :append true)) [[:a]] 1)
-; (crawl "https://gocardless.com/en-au/" (fn [url] (spit "output.txt" (str url "\n") :append true)) [[:a]] 3)
+; -> (crawl {:url "https://news.ycombinator.com"
+;            :handler println
+;            :link-selector #{[:a.storylink] [:a.morelink]}
+;            :max-depth 3})
+; -> "https://a.com"
+;    "https://b.com"
+;          ...
+(defn crawl
+  [config]
+  (let [url           (:url config)
+        handler       (:handler config)
+        link-selector (:link-selector config)
+        max-depth     (:max-depth config)
+        visiting      (ref (set nil))
+        visited       (ref (set nil))]
+    (go-crawl url handler link-selector max-depth visiting visited)))
