@@ -4,10 +4,6 @@ A lightweight concurrent web crawler written in Clojure!
 
 ### Hacker News headlines
 ```clojure
-(ns clementine.examples.hacker-news-crawler
-  (:require [clementine.core :refer [fetch-dom crawl]
-             [net.cgrand.enlive-html :as html]]))
-
 (def hacker-news-url "https://news.ycombinator.com")
 
 (defn headlines
