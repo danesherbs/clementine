@@ -31,7 +31,7 @@ A lightweight concurrent web crawler written in Clojure!
 (def amazon-url "https://www.amazon.ca/Echo-Dot-3rd-gen-Charcoal/product-reviews/B07PDHT5XP/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews")
 
 (defn reviews
-  "Retrieves reviews"
+  "Retrieves Amazon reviews"
   [url]
   (-> url
       fetch-dom
