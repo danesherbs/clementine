@@ -1,8 +1,7 @@
 (ns clementine.core
   "Lightweight web crawler with an aritrary handler."
   (:use [clojure.core.async :only (go)])
-  (:require [clojure.core.cache :as cache]
-            [net.cgrand.enlive-html :as html]
+  (:require [net.cgrand.enlive-html :as html]
             [clj-http.client :as client]))
 
 
