@@ -1,4 +1,5 @@
 # Clementine
+[![Clojars Project](https://img.shields.io/clojars/v/clementine.svg)](https://clojars.org/clementine)
 
 A lightweight concurrent web crawler with minimal dependencies
 
