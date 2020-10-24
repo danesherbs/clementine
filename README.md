@@ -1,6 +1,6 @@
 # Clementine
 
-A lightweight concurrent web crawler written in Clojure!
+A lightweight concurrent web crawler with minimal dependencies
 
 ### Hacker News headlines
 ```clojure
@@ -45,4 +45,30 @@ A lightweight concurrent web crawler written in Clojure!
         :handler reviews
         :link-selector [:li.a-last :a]
         :max-depth 3})
+```
+
+### Setup
+
+Leiningen/Boot
+```clojure
+[clementine "0.0.1"]
+```
+
+Clojure CLI/deps.edn
+```clojure
+clementine {:mvn/version "0.0.1"}
+```
+
+Gradle
+```gradle
+compile 'clementine:clementine:0.0.1'
+```
+
+Maven
+```xml
+<dependency>
+  <groupId>clementine</groupId>
+  <artifactId>clementine</artifactId>
+  <version>0.0.1</version>
+</dependency>
 ```
